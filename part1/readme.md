@@ -4,6 +4,21 @@ Kubernetes作为业界容器云平台的分布式架构方案，跟我一起来�
 
 
 
+![test](../.gitbook/assets/2024745637.jpg)
+
+
+
+   
+
+
+
+
+![](../.gitbook/assets/1478410021.jpg) 
+
+
+
+
+
 {% hint style="info" %}
 asdf a
 {% endhint %}
