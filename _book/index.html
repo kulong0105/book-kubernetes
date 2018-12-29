@@ -424,12 +424,105 @@
                                 
                                 <div id="anchor-navigation-ex-navbar"><i class="fa fa-navicon"></i><ul><li><span class="title-icon "></span><a href="#introduction"><b></b>Introduction</a></li></ul></div><a href="#introduction" id="anchorNavigationExGoTop"><i class="fa fa-arrow-up"></i></a><h1 id="introduction"><a name="introduction" class="anchor-navigation-ex-anchor" href="#introduction"><i class="fa fa-link" aria-hidden="true"></i></a><a name="introduction" class="plugin-anchor" href="#introduction"><i class="fa fa-link" aria-hidden="true"></i></a>Introduction</h1>
 <p>Kubernetes&#x4F5C;&#x4E3A;&#x4E1A;&#x754C;&#x5BB9;&#x5668;&#x4E91;&#x5E73;&#x53F0;&#x7684;&#x5206;&#x5E03;&#x5F0F;&#x67B6;&#x6784;&#x65B9;&#x6848;&#xFF0C;&#x8DDF;&#x6211;&#x4E00;&#x8D77;&#x6765;&#x5B66;&#x4E60;</p>
-<pre><code>#!/bin/bash
-
+<pre><code class="lang-bash"><span class="hljs-meta">#!/bin/bash</span>
 ls
-echo
+<span class="hljs-built_in">echo</span>
 df
-</code></pre><footer class="page-footer-ex"> <span class="page-footer-ex-copyright"> By <a href="https://kulong0105.cn" target="_blank">kulong0105</a> </span> &#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0; <span class="page-footer-ex-footer-update"> &#x6B64;&#x9875;&#x9762;&#x4FEE;&#x8BA2;&#x4E8E;&#xFF1A; 2018-12-29 11:01:13 </span> </footer>
+
+<span class="hljs-function"><span class="hljs-title">manager_services</span></span>()
+{
+    <span class="hljs-built_in">local</span> nodes_info=<span class="hljs-string">&quot;<span class="hljs-variable">$1</span>&quot;</span>
+    <span class="hljs-built_in">local</span> services=<span class="hljs-string">&quot;<span class="hljs-variable">$2</span>&quot;</span>
+
+    <span class="hljs-comment"># https://unix.stackexchange.com/questions/336149/print-all-words-on-lines-of-a-file-in-reverse-order</span>
+    [[ <span class="hljs-variable">$ACTION</span> = <span class="hljs-string">&quot;stop&quot;</span> ]] &amp;&amp; services=$(<span class="hljs-built_in">echo</span> <span class="hljs-variable">$services</span> | awk <span class="hljs-string">&apos;{for(i=NF;i&gt;=1;i--) printf &quot;%s &quot;, $i;print &quot;&quot;}&apos;</span>)
+
+    <span class="hljs-built_in">local</span> node_info
+    <span class="hljs-built_in">local</span> service
+
+    <span class="hljs-keyword">for</span> node_info <span class="hljs-keyword">in</span> <span class="hljs-variable">$nodes_info</span>; <span class="hljs-keyword">do</span>
+    &#xA6;   <span class="hljs-keyword">for</span> service <span class="hljs-keyword">in</span> <span class="hljs-variable">$services</span>; <span class="hljs-keyword">do</span>
+    &#xA6;   &#xA6;   <span class="hljs-keyword">if</span> <span class="hljs-variable">$SSH</span> <span class="hljs-variable">$node_info</span> <span class="hljs-string">&quot;systemctl status <span class="hljs-variable">$service</span> 2&gt;&amp;1 | grep -q \&quot;Unit <span class="hljs-variable">$service</span>.* could not be found\&quot;&quot;</span>; <span class="hljs-keyword">then</span>
+    &#xA6;   &#xA6;   &#xA6;   <span class="hljs-built_in">log</span>_warn <span class="hljs-string">&quot;cannot find <span class="hljs-variable">$service</span> service in <span class="hljs-variable">$node_info</span>&quot;</span>
+    &#xA6;   &#xA6;   &#xA6;   <span class="hljs-built_in">continue</span>
+    &#xA6;   &#xA6;   <span class="hljs-keyword">fi</span>
+
+    &#xA6;   &#xA6;   <span class="hljs-keyword">if</span> <span class="hljs-variable">$SSH</span> <span class="hljs-variable">$node_info</span> <span class="hljs-string">&quot;timeout 300 systemctl <span class="hljs-variable">$ACTION</span> <span class="hljs-variable">$service</span>&quot;</span> &amp;&gt;/dev/null; <span class="hljs-keyword">then</span>
+    &#xA6;   &#xA6;   &#xA6;   <span class="hljs-built_in">log</span>_info <span class="hljs-string">&quot;<span class="hljs-variable">$service</span>: <span class="hljs-variable">$node_info</span>: OK&quot;</span>
+    &#xA6;   &#xA6;   <span class="hljs-keyword">else</span>
+    &#xA6;   &#xA6;   &#xA6;   <span class="hljs-built_in">log</span>_error <span class="hljs-string">&quot;<span class="hljs-variable">$service</span>: <span class="hljs-variable">$node_info</span>: Failure&quot;</span>
+    &#xA6;   &#xA6;   <span class="hljs-keyword">fi</span>
+    &#xA6;   <span class="hljs-keyword">done</span>
+    <span class="hljs-keyword">done</span>
+}
+
+<span class="hljs-built_in">export</span> <span class="hljs-_">-f</span> <span class="hljs-built_in">log</span>
+<span class="hljs-built_in">export</span> <span class="hljs-_">-f</span> <span class="hljs-built_in">log</span>_info
+<span class="hljs-built_in">export</span> <span class="hljs-_">-f</span> <span class="hljs-built_in">log</span>_debug
+<span class="hljs-built_in">export</span> <span class="hljs-_">-f</span> <span class="hljs-built_in">log</span>_warn
+<span class="hljs-built_in">export</span> <span class="hljs-_">-f</span> <span class="hljs-built_in">log</span>_error
+<span class="hljs-built_in">export</span> <span class="hljs-_">-f</span> check_files_exist
+<span class="hljs-built_in">export</span> <span class="hljs-_">-f</span> parse_deploy_config
+<span class="hljs-built_in">export</span> <span class="hljs-_">-f</span> check_<span class="hljs-built_in">dirs</span>_exist
+<span class="hljs-built_in">export</span> <span class="hljs-_">-f</span> get_ip_info
+<span class="hljs-built_in">export</span> <span class="hljs-_">-f</span> check_ip_config
+<span class="hljs-built_in">export</span> <span class="hljs-_">-f</span> check_passwd
+<span class="hljs-built_in">export</span> <span class="hljs-_">-f</span> check_node_status
+<span class="hljs-built_in">export</span> <span class="hljs-_">-f</span> parse_ip_info
+<span class="hljs-built_in">export</span> <span class="hljs-_">-f</span> parse_app_info
+<span class="hljs-built_in">export</span> <span class="hljs-_">-f</span> convert_to_ib
+<span class="hljs-built_in">export</span> <span class="hljs-_">-f</span> parse_ib_info
+
+[[ <span class="hljs-string">&quot;<span class="hljs-variable">$SCRIPT_NAME</span>&quot;</span> ]] &amp;&amp; ACTION=<span class="hljs-string">&quot;run-script-<span class="hljs-variable">$(echo &quot;$SCRIPT_PARAM&quot; | tr -s -t &quot; &quot; &quot;-&quot;)</span>&quot;</span>
+[[ <span class="hljs-string">&quot;<span class="hljs-variable">$COMMANDS</span>&quot;</span> ]] &amp;&amp; ACTION=<span class="hljs-string">&quot;run-command&quot;</span>
+[[ -z <span class="hljs-string">&quot;<span class="hljs-variable">$ACTION</span>&quot;</span> ]] &amp;&amp; ACTION=<span class="hljs-string">&quot;unknown&quot;</span>
+
+config_logfile || <span class="hljs-built_in">exit</span>
+check_user_id || <span class="hljs-built_in">exit</span>
+check_install_commands || <span class="hljs-built_in">exit</span>
+update_ssh_key || <span class="hljs-built_in">exit</span>
+parse_param || <span class="hljs-built_in">exit</span>
+parse_deploy_config || <span class="hljs-built_in">exit</span>
+load_service_info || <span class="hljs-built_in">exit</span>
+
+<span class="hljs-built_in">export</span> SKYDISCOVERY_SRC
+<span class="hljs-built_in">export</span> SCOPE
+<span class="hljs-built_in">export</span> ACTION
+<span class="hljs-built_in">export</span> PSSH
+<span class="hljs-built_in">export</span> PSCP
+<span class="hljs-built_in">export</span> SSH
+<span class="hljs-built_in">export</span> SCP
+
+<span class="hljs-keyword">case</span> <span class="hljs-variable">$ACTION</span> <span class="hljs-keyword">in</span>
+    check)
+    &#xA6;   <span class="hljs-variable">$DEBUG_PREFIX</span> <span class="hljs-string">&quot;<span class="hljs-variable">${SKYDISCOVERY_SRC}</span>&quot;</span>/bin/check <span class="hljs-string">&quot;<span class="hljs-variable">$OTHERS_PARAM</span>&quot;</span> ;;
+    install | uninstall | add | remove | upgrade | degrade)
+    &#xA6;   <span class="hljs-variable">$DEBUG_PREFIX</span> <span class="hljs-string">&quot;<span class="hljs-variable">${SKYDISCOVERY_SRC}</span>&quot;</span>/bin/deploy ;;
+    <span class="hljs-built_in">test</span>)
+    &#xA6;   <span class="hljs-variable">$DEBUG_PREFIX</span> <span class="hljs-string">&quot;<span class="hljs-variable">${SKYDISCOVERY_SRC}</span>&quot;</span>/bin/<span class="hljs-built_in">test</span> <span class="hljs-string">&quot;<span class="hljs-variable">$OTHERS_PARAM</span>&quot;</span> ;;
+    monitor)
+    &#xA6;   <span class="hljs-variable">$DEBUG_PREFIX</span> <span class="hljs-string">&quot;<span class="hljs-variable">${SKYDISCOVERY_SRC}</span>&quot;</span>/bin/monitor ;;
+    status | is-active | stop | start | restart)
+    &#xA6;   <span class="hljs-variable">$DEBUG_PREFIX</span> <span class="hljs-string">&quot;<span class="hljs-variable">${SKYDISCOVERY_SRC}</span>&quot;</span>/bin/manager <span class="hljs-string">&quot;<span class="hljs-variable">$OTHERS_PARAM</span>&quot;</span> ;;
+    init)
+    &#xA6;   <span class="hljs-variable">$DEBUG_PREFIX</span> <span class="hljs-string">&quot;<span class="hljs-variable">${SKYDISCOVERY_SRC}</span>&quot;</span>/bin/init ;;
+    *)
+    &#xA6;   <span class="hljs-keyword">if</span> [[ <span class="hljs-string">&quot;<span class="hljs-variable">${COMMANDS}</span>&quot;</span> ]]; <span class="hljs-keyword">then</span>
+    &#xA6;   &#xA6;   <span class="hljs-variable">$DEBUG_PREFIX</span> <span class="hljs-string">&quot;<span class="hljs-variable">${SKYDISCOVERY_SRC}</span>&quot;</span>/bin/cmd <span class="hljs-string">&quot;<span class="hljs-variable">${COMMANDS}</span>&quot;</span>
+    &#xA6;   <span class="hljs-keyword">elif</span> [[ <span class="hljs-string">&quot;<span class="hljs-variable">${SCRIPT_NAME}</span>&quot;</span> ]]; <span class="hljs-keyword">then</span>
+    &#xA6;   &#xA6;   <span class="hljs-keyword">if</span> [[ -x <span class="hljs-string">&quot;<span class="hljs-variable">${SKYDISCOVERY_SRC}</span>/bin/script/<span class="hljs-variable">${SCRIPT_NAME}</span>&quot;</span> ]]; <span class="hljs-keyword">then</span>
+    &#xA6;   &#xA6;   &#xA6;   <span class="hljs-variable">$DEBUG_PREFIX</span> <span class="hljs-string">&quot;<span class="hljs-variable">${SKYDISCOVERY_SRC}</span>&quot;</span>/bin/script/<span class="hljs-string">&quot;<span class="hljs-variable">${SCRIPT_NAME}</span>&quot;</span> <span class="hljs-string">&quot;<span class="hljs-variable">${SCRIPT_PARAM}</span>&quot;</span>
+    &#xA6;   &#xA6;   <span class="hljs-keyword">else</span>
+    &#xA6;   &#xA6;   &#xA6;   <span class="hljs-built_in">log</span>_error <span class="hljs-string">&quot;cannot find executable script <span class="hljs-variable">${SCRIPT_NAME}</span> under <span class="hljs-variable">${SKYDISCOVERY_SRC}</span>/bin/script&quot;</span>
+    &#xA6;   &#xA6;   &#xA6;   <span class="hljs-built_in">exit</span> 1
+    &#xA6;   &#xA6;   <span class="hljs-keyword">fi</span>
+    &#xA6;   <span class="hljs-keyword">else</span>
+    &#xA6;   &#xA6;   <span class="hljs-built_in">log</span>_error <span class="hljs-string">&quot;cannot support \&quot;<span class="hljs-variable">$ACTION</span>\&quot; operation&quot;</span>
+    &#xA6;   &#xA6;   usage
+    &#xA6;   <span class="hljs-keyword">fi</span> ;;
+<span class="hljs-keyword">esac</span>
+</code></pre>
+<footer class="page-footer-ex"> <span class="page-footer-ex-copyright"> By <a href="https://kulong0105.cn" target="_blank">kulong0105</a> </span> &#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0; <span class="page-footer-ex-footer-update"> &#x6B64;&#x9875;&#x9762;&#x4FEE;&#x8BA2;&#x4E8E;&#xFF1A; 2018-12-29 14:15:40 </span> </footer>
                                 
                                 </section>
                             
@@ -468,7 +561,7 @@ df
     <script>
         var gitbook = gitbook || [];
         gitbook.push(function() {
-            gitbook.page.hasChanged({"page":{"title":"Introduction","level":"1.1","depth":1,"next":{"title":"基本安装","level":"1.2","depth":1,"path":"howtouse/README.md","ref":"howtouse/README.md","articles":[{"title":"Node.js安装","level":"1.2.1","depth":2,"path":"howtouse/nodejsinstall.md","ref":"howtouse/nodejsinstall.md","articles":[]},{"title":"Gitbook安装","level":"1.2.2","depth":2,"path":"howtouse/gitbookinstall.md","ref":"howtouse/gitbookinstall.md","articles":[]},{"title":"Gitbook命令行速览","level":"1.2.3","depth":2,"path":"howtouse/gitbookcli.md","ref":"howtouse/gitbookcli.md","articles":[]}]},"dir":"ltr"},"config":{"plugins":["-sharing","splitter","expandable-chapters-small","anchors","github","github-buttons","sharing-plus","anchor-navigation-ex","favicon","page-footer-ex","livereload"],"styles":{"website":"./styles/website.css"},"pluginsConfig":{"github":{"url":"https://github.com/kulong0105"},"livereload":{},"page-footer-ex":{"copyright":"By [kulong0105](https://kulong0105.cn)","markdown":true,"update_format":"YYYY-MM-DD HH:mm:ss","update_label":"此页面修订于："},"splitter":{},"search":{},"sharing-plus":{"qq":false,"all":["facebook","google","twitter","instapaper","linkedin","pocket","stumbleupon"],"douban":false,"facebook":true,"weibo":false,"instapaper":false,"whatsapp":false,"hatenaBookmark":false,"twitter":true,"messenger":false,"line":false,"vk":false,"pocket":true,"google":false,"viber":false,"stumbleupon":false,"qzone":false,"linkedin":false},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"highlight":{},"anchor-navigation-ex":{"associatedWithSummary":true,"float":{"floatIcon":"fa fa-navicon","level1Icon":"","level2Icon":"","level3Icon":"","showLevelIcon":false},"mode":"float","multipleH1":true,"pageTop":{"level1Icon":"","level2Icon":"","level3Icon":"","showLevelIcon":false},"printLog":false,"showGoTop":true,"showLevel":false},"favicon":{"shortcut":"./source/images/favicon.jpg","bookmark":"./source/images/favicon.jpg","appleTouch":"./source/images/apple-touch-icon.jpg","appleTouchMore":{"120x120":"./source/images/apple-touch-icon.jpg","180x180":"./source/images/apple-touch-icon.jpg"}},"github-buttons":{"buttons":[{"user":"kulong0105","repo":"kulong0105.github.io","type":"star","size":"small","count":true}]},"expandable-chapters-small":{},"sharing":{"qq":false,"all":["google","facebook","weibo","twitter","qq","qzone","linkedin","pocket"],"douban":false,"facebook":false,"weibo":false,"instapaper":false,"whatsapp":false,"hatenaBookmark":false,"twitter":false,"messenger":false,"line":false,"vk":false,"pocket":false,"google":false,"viber":false,"stumbleupon":false,"qzone":false,"linkedin":false},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false},"anchors":{}},"theme":"default","author":"Allen Ren","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"Kubernetes学习笔记","language":"zh-hans","links":{"sidebar":{"我的博客":"https://kulong0105.cn"}},"gitbook":"3.2.3","description":"An introduction about kubernetes "},"file":{"path":"README.md","mtime":"2018-12-29T03:01:13.608Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-12-29T03:18:05.789Z"},"basePath":".","book":{"language":""}});
+            gitbook.page.hasChanged({"page":{"title":"Introduction","level":"1.1","depth":1,"next":{"title":"基本安装","level":"1.2","depth":1,"path":"howtouse/README.md","ref":"howtouse/README.md","articles":[{"title":"Node.js安装","level":"1.2.1","depth":2,"path":"howtouse/nodejsinstall.md","ref":"howtouse/nodejsinstall.md","articles":[]},{"title":"Gitbook安装","level":"1.2.2","depth":2,"path":"howtouse/gitbookinstall.md","ref":"howtouse/gitbookinstall.md","articles":[]},{"title":"Gitbook命令行速览","level":"1.2.3","depth":2,"path":"howtouse/gitbookcli.md","ref":"howtouse/gitbookcli.md","articles":[]}]},"dir":"ltr"},"config":{"plugins":["-sharing","splitter","expandable-chapters-small","anchors","github","github-buttons","sharing-plus","anchor-navigation-ex","favicon","page-footer-ex","livereload"],"styles":{"website":"./styles/website.css"},"pluginsConfig":{"github":{"url":"https://github.com/kulong0105"},"livereload":{},"page-footer-ex":{"copyright":"By [kulong0105](https://kulong0105.cn)","markdown":true,"update_format":"YYYY-MM-DD HH:mm:ss","update_label":"此页面修订于："},"splitter":{},"search":{},"sharing-plus":{"qq":false,"all":["facebook","google","twitter","instapaper","linkedin","pocket","stumbleupon"],"douban":false,"facebook":true,"weibo":false,"instapaper":false,"whatsapp":false,"hatenaBookmark":false,"twitter":true,"messenger":false,"line":false,"vk":false,"pocket":true,"google":false,"viber":false,"stumbleupon":false,"qzone":false,"linkedin":false},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"highlight":{},"anchor-navigation-ex":{"associatedWithSummary":true,"float":{"floatIcon":"fa fa-navicon","level1Icon":"","level2Icon":"","level3Icon":"","showLevelIcon":false},"mode":"float","multipleH1":true,"pageTop":{"level1Icon":"","level2Icon":"","level3Icon":"","showLevelIcon":false},"printLog":false,"showGoTop":true,"showLevel":false},"favicon":{"shortcut":"./source/images/favicon.jpg","bookmark":"./source/images/favicon.jpg","appleTouch":"./source/images/apple-touch-icon.jpg","appleTouchMore":{"120x120":"./source/images/apple-touch-icon.jpg","180x180":"./source/images/apple-touch-icon.jpg"}},"github-buttons":{"buttons":[{"user":"kulong0105","repo":"kulong0105.github.io","type":"star","size":"small","count":true}]},"expandable-chapters-small":{},"sharing":{"qq":false,"all":["google","facebook","weibo","twitter","qq","qzone","linkedin","pocket"],"douban":false,"facebook":false,"weibo":false,"instapaper":false,"whatsapp":false,"hatenaBookmark":false,"twitter":false,"messenger":false,"line":false,"vk":false,"pocket":false,"google":false,"viber":false,"stumbleupon":false,"qzone":false,"linkedin":false},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false},"anchors":{}},"theme":"default","author":"Allen Ren","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"Kubernetes学习笔记","language":"zh-hans","links":{"sidebar":{"我的博客":"https://kulong0105.cn"}},"gitbook":"3.2.3","description":"An introduction about kubernetes "},"file":{"path":"README.md","mtime":"2018-12-29T06:15:40.156Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-12-29T06:15:44.034Z"},"basePath":".","book":{"language":""}});
         });
     </script>
 </div>
